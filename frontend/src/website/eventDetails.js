@@ -1,22 +1,30 @@
 import AnimationRevealPage from 'helpers/AnimationRevealPage';
 import { useState, useEffect } from 'react';
-import React, { Component } from 'react';
+import React from 'react';
 import { useLocation, useHistory } from 'react-router-dom';
-import tw from "twin.macro";
 
 import Feature from "components/features/TwoColSingleFeatureWithStats2-button.js";
 import Header from 'components/headers/light.js'
 import Footer from "components/footers/Home-Footer";
-import Test from "components/test"
 
 import { auth, provider, db } from '../firebase/firebase';
 import { signInWithPopup, signOut } from "firebase/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, addDoc, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 
-// import { createBrowserHistory } from 'history'
-
-// export const history = createBrowserHistory({forceRefresh: true})
+import {
+    Box,
+    VStack,
+    FormControl,
+    FormLabel,
+    Input,
+    useToast,
+    IconButton,
+    Divider,
+    Button,
+    Heading,
+} from '@chakra-ui/react'
+import { DeleteIcon } from '@chakra-ui/icons';
 
 function goBackToEvents(history) {
     history.push("/events")
@@ -24,42 +32,25 @@ function goBackToEvents(history) {
 }
 
 function Events() {
+    const location = useLocation();
+    const card = location.state;
+    const history = useHistory();
+    const toast = useToast();
 
-    const location = useLocation()
-    const card = location.state
-    const history = useHistory()
-    
-    if (!card) goBackToEvents(history, card)
-
+    if (!card) goBackToEvents(history, card);
 
     const [user, setUser] = useState(null);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [munID, setMunID] = useState('');
-    const [formData, setFormData] = useState({
+    
+    const [leaderDetails, setLeaderDetails] = useState({
         name: '',
-        college: '',
-        course: '',
+        email: '',
+        phone: '',
+        college: ''
     });
 
-    // Automatically check authentication state on page load
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-        setUser(currentUser);
-        await checkIfFormSubmitted(currentUser.uid); // Check if form was already submitted
-        }
-    });
-
-    return () => unsubscribe(); // Cleanup the subscription
-    }, []);
-
-    // Handle form input change
-    const handleInputChange = (e) => {
-    setFormData({
-        ...formData,
-        [e.target.name]: e.target.value,
-    });
-    };
+    const [teamMembers, setTeamMembers] = useState([]);
 
     const signInWithGoogle = async () => {
         try {
@@ -71,32 +62,57 @@ function Events() {
         }
     };
 
-    // Check if the form is already submitted
-    const checkIfFormSubmitted = async (userId) => {
-    const docRef = doc(db, 'users', userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        setFormSubmitted(true);
-        setMunID(docSnap.data().munID);
-    }
+    const handleLeaderChange = (e) => {
+        const { name, value } = e.target;
+        setLeaderDetails((prevDetails) => ({
+            ...prevDetails,
+            [name]: value
+        }));
     };
 
-    const handleSignOut = async () => {
-        try {
-        await signOut(auth);
-        setUser(null);
-        } catch (error) {
-        console.error("Error signing out:", error);
+    const handleTeamMemberChange = (index, event) => {
+        const { name, value } = event.target;
+        const members = [...teamMembers];
+        members[index][name] = value;
+        setTeamMembers(members);
+    };
+
+    const addTeamMember = () => {
+        if (teamMembers.length < 2) {
+            setTeamMembers([...teamMembers, { name: '', address: '', phone: '', college: '' }]);
         }
     };
 
-    // Submit form and store in Firestore
+    const removeTeamMember = (index) => {
+        const members = teamMembers.filter((_, memberIndex) => memberIndex !== index);
+        setTeamMembers(members);
+    };
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                await checkIfFormSubmitted(currentUser.uid);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const checkIfFormSubmitted = async (userId) => {
+        const docRef = doc(db, 'users', userId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setFormSubmitted(true);
+            setMunID(docSnap.data().munID);
+        }
+    };
+
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user) {
-        alert("Please sign in with Google to submit the form.");
-        return;
-    }
+        e.preventDefault();
+        if (!user) {
+            alert("Please sign in with Google to submit the form.");
+            return;
+        }
 
     try {
 		const userId = user.uid;
@@ -104,18 +120,28 @@ function Events() {
 		const snapshot = await getDocs(userCollection);
         const munID = `MUN-${snapshot.docs.length + 1}`; // Generate a unique MUN ID
 
-        await setDoc(doc(db, 'users', userId), {
-        ...formData,
-        email: user.email,
-        uid: userId,
-        munID,
-        });
+            // Submit the leader and team member details
+            await setDoc(doc(db, 'users', userId), {
+                leaderDetails,
+                teamMembers,
+                email: user.email,
+                uid: userId,
+                munID,
+            });
 
-        setFormSubmitted(true);
-        setMunID(munID);
-    } catch (error) {
-        console.error("Error submitting form:", error);
-    }
+            setFormSubmitted(true);
+            setMunID(munID);
+
+            toast({
+                title: 'Registration Successful.',
+                description: 'Your team details have been recorded.',
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+            });
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        }
     };
 
     // Check if user is signed in on page load
@@ -141,116 +167,81 @@ function Events() {
                 primaryButtonText="Register Now!"
                 registrableEvent={card.registrableEvent ? card.registrableEvent : false}
                 linkss={card.linkss ? card.linkss : "" }
-                linkss1={card.linkss1 ? card.linkss1 : "" } //for iitj
+                linkss1={card.linkss1 ? card.linkss1 : "" }
                 timing ={card.timing == "Online Event" ? true : false}
                 minTeamSize={card.minTeamSize ? card.minTeamSize : 1}
                 maxTeamSize={card.maxTeamSize ? card.maxTeamSize : 1}
                 prize={card.prize ? card.prize : ""}
                 isFlagship={card.isFlagship ? card.isFlagship : true}
                 rulebookLink={card.rulebookLink ? card.rulebookLink : ""}
-                statistics={
-                    (card.maxTeamSize > 1) ? 
-                    [   
-                        {
-                            key: "Time",
-                            value: `${card.timing}`
-                        },
-                        {
-                            key: "Group size",
-                            value: `${card.minTeamSize}-${card.maxTeamSize}`
-                        },
-                        {
-                            key: "Prize",
-                            value: `${card.prize}`
-                        }
-                    ] : 
-                    (
-                        (card.registrableEvent) ?
-                        [
-                            {
-                                key: "Time",
-                                value: `${card.timing}`
-                            },
-                            // {
-                            //     key: "Event type",
-                            //     value: "Individual"
-                            // },
-                            {
-                                key: "Prize",
-                                value: `${card.prize}`
-                            }
-                        ] :
-                        (
-                            (card.timing) ?
-                            [
-                                {
-                                    // key: "Time",
-                                    value: `${card.timing}`
-                                },
-                                {
-                                    key: "Prize",
-                                    value: `${card.prize}`
-                                }
-                            ] :
-                            null
-                        )
-                    )
-                }
             />
-                
-            <div>
-                
-            {user ? (
-                <div>
-                {formSubmitted ? (
-                    <div>
-                    <h3>Form Already Submitted!</h3>
-                    <p>Your MUN ID: {munID}</p>
-                    </div>
+
+            <Box p={5} border="1px solid" borderColor="gray.300" borderRadius="8px" maxWidth="600px" margin="auto" bg="white">
+                {user ? (
+                    formSubmitted ? (
+                        <div>
+                            <h3>Form Already Submitted!</h3>
+                            <p>Your MUN ID: {munID}</p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit}>
+                            <VStack spacing={4}>
+                                <Heading as="h2" size="lg" color="blue.500">Team Leader Details</Heading>
+                                <FormControl isRequired>
+                                    <FormLabel>Team Leader Name</FormLabel>
+                                    <Input name="name" value={leaderDetails.name} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Team Leader Email</FormLabel>
+                                    <Input name="email" value={leaderDetails.email} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Team Leader Phone</FormLabel>
+                                    <Input name="phone" value={leaderDetails.phone} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Team Leader College</FormLabel>
+                                    <Input name="college" value={leaderDetails.college} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
+                                </FormControl>
+
+                                <Divider borderColor="gray.300" />
+
+                                <Heading as="h3" size="md" color="blue.500">Team Members (Max 2)</Heading>
+                                {teamMembers.map((member, index) => (
+                                    <VStack key={index} spacing={4} border="1px solid" borderColor="blue.200" borderRadius="8px" p={4} mb={4} width="100%" bg="blue.50">
+                                        <FormControl isRequired>
+                                            <FormLabel>Member Name</FormLabel>
+                                            <Input name="name" value={member.name} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                        </FormControl>
+                                        <FormControl isRequired>
+                                            <FormLabel>Member Address</FormLabel>
+                                            <Input name="address" value={member.address} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                        </FormControl>
+                                        <FormControl isRequired>
+                                            <FormLabel>Member Phone</FormLabel>
+                                            <Input name="phone" value={member.phone} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                        </FormControl>
+                                        <FormControl isRequired>
+                                            <FormLabel>Member College</FormLabel>
+                                            <Input name="college" value={member.college} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                        </FormControl>
+                                        <IconButton icon={<DeleteIcon />} aria-label="Remove Team Member" onClick={() => removeTeamMember(index)} />
+                                    </VStack>
+                                ))}
+                                <Button onClick={addTeamMember} disabled={teamMembers.length >= 2} colorScheme="blue">
+                                    Add Team Member
+                                </Button>
+
+                                <Button type="submit" colorScheme="green" width="100%">Submit</Button>
+                            </VStack>
+                        </form>
+                    )
                 ) : (
-                    <form onSubmit={handleSubmit}>
-                    <h2>Fill out the MUN Registration Form</h2>
                     <div>
-                        <label>Name: </label>
-                        <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        />
+                        <button onClick={signInWithGoogle}>Sign In with Google</button>
                     </div>
-                    <div>
-                        <label>College: </label>
-                        <input
-                        type="text"
-                        name="college"
-                        value={formData.college}
-                        onChange={handleInputChange}
-                        required
-                        />
-                    </div>
-                    <div>
-                        <label>Course: </label>
-                        <input
-                        type="text"
-                        name="course"
-                        value={formData.course}
-                        onChange={handleInputChange}
-                        required
-                        />
-                    </div>
-                    <button type="submit">Submit</button>
-                    </form>
                 )}
-                </div>
-            ) : (
-                <div>
-                <button onClick={signInWithGoogle}>Sign In with Google</button>
-                </div>
-            )}
-            </div>
-            <Test />
+            </Box>
             <Footer />
         </AnimationRevealPage>
     );
