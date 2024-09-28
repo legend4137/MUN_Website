@@ -226,6 +226,11 @@ function Events() {
                                     <Text fontSize="lg" color="red.600">Your application is being reviewed.</Text>
                                 </VStack>
                             )}
+
+                            <Text>
+                                For any Query Contact +91 9509615569
+
+                            </Text>
                         </Box>
                     ) : (
                         <form onSubmit={handleSubmit}>
@@ -246,7 +251,7 @@ function Events() {
                                     <Input name="phone" value={leaderDetails.phone} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
                                 </FormControl>
                                 <FormControl isRequired>
-                                    <FormLabel>Team Leader College</FormLabel>
+                                    <FormLabel>Team Leader College Name</FormLabel>
                                     <Input name="college" value={leaderDetails.college} onChange={handleLeaderChange} bg="orange.50" borderColor="green.300" _hover={{ borderColor: 'green.500' }} />
                                 </FormControl>
 
@@ -268,7 +273,7 @@ function Events() {
                                         <Input name="phone" value={member.phone} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
                                     </FormControl>
                                     <FormControl isRequired>
-                                        <FormLabel>Member College</FormLabel>
+                                        <FormLabel>Member College Name</FormLabel>
                                         <Input name="college" value={member.college} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
                                     </FormControl>
                                     <IconButton icon={<DeleteIcon />} aria-label="Remove Team Member" onClick={() => removeTeamMember(index)} />
