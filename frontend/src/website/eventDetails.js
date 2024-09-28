@@ -24,9 +24,11 @@ import {
     Divider,
     Button,
     Heading,
-    Image,  
+    Image,
+    Text,
+    Icon
 } from '@chakra-ui/react'
-import { DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon, CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
 
 function goBackToEvents(history) {
     history.push("/events")
@@ -44,6 +46,7 @@ function Events() {
     const [user, setUser] = useState(null);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [munID, setMunID] = useState('');
+    const [status, setStatus] = useState(null);
     
     const [leaderDetails, setLeaderDetails] = useState({
         name: '',
@@ -112,6 +115,7 @@ function Events() {
         if (docSnap.exists()) {
             setFormSubmitted(true);
             setMunID(docSnap.data().munID);
+            setStatus(docSnap.data().status);
         }
     };
 
@@ -145,6 +149,7 @@ function Events() {
                 email: user.email,
                 uid: userId,
                 munID,
+                status: false,
                 imageURL
             });
 
@@ -198,10 +203,22 @@ function Events() {
             <Box p={5} border="1px solid" borderColor="gray.300" borderRadius="8px" maxWidth="600px" margin="auto" bg="white">
                 {user ? (
                     formSubmitted ? (
-                        <div>
-                            <h3>Form Already Submitted!</h3>
-                            <p>Your MUN ID: {munID}</p>
-                        </div>
+                        <Box textAlign="center">
+                            <Heading as="h3" size="lg" color="blue.500">Application Status</Heading>
+                            <Text>Your MUN ID: {munID}</Text>
+
+                            {status === true ? (
+                                <VStack mt={4}>
+                                    <Icon as={CheckCircleIcon} w={10} h={10} color="green.500" />
+                                    <Text fontSize="lg" color="green.600">Your application is approved!</Text>
+                                </VStack>
+                            ) : (
+                                <VStack mt={4}>
+                                    <Icon as={WarningIcon} w={10} h={10} color="red.500" />
+                                    <Text fontSize="lg" color="red.600">Your application is being reviewed.</Text>
+                                </VStack>
+                            )}
+                        </Box>
                     ) : (
                         <form onSubmit={handleSubmit}>
                             <VStack spacing={4}>
