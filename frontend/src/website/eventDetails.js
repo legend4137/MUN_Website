@@ -24,6 +24,7 @@ import {
     Divider,
     Button,
     Heading,
+    Image,  
 } from '@chakra-ui/react'
 import { DeleteIcon } from '@chakra-ui/icons';
 
@@ -246,9 +247,16 @@ function Events() {
                                         <IconButton icon={<DeleteIcon />} aria-label="Remove Team Member" onClick={() => removeTeamMember(index)} />
                                     </VStack>
                                 ))}
+
                                 <Button onClick={addTeamMember} disabled={teamMembers.length >= 2} colorScheme="blue">
                                     Add Team Member
                                 </Button>
+
+                                <Box textAlign="center">
+                                    <Heading as="h3" size="md" color="blue.500">Scan QR Code to proceed with Payment</Heading>
+                                    <Image src="/QR.png" alt="QR Code" boxSize="150px" m="auto" />
+                                </Box>
+
                                 <ul size="sm">
                                     <li>One Person 3000</li>
                                     <li>Two People 5000</li>
@@ -258,6 +266,8 @@ function Events() {
                                     <FormLabel>Upload Payment Screenshot</FormLabel>
                                     <Input name='file' onChange={handleFileChange} accept='image/*' type='file'></Input>
                                 </FormControl>
+                                <Divider borderColor="gray.300" />
+
                                 <Button type="submit" colorScheme="green" width="100%">Submit</Button>
                             </VStack>
                         </form>
