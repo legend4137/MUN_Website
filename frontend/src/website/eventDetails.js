@@ -11,6 +11,7 @@ import { auth, provider, db } from '../firebase/firebase';
 import { signInWithPopup, signOut } from "firebase/auth";
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import {
     Box,
@@ -51,6 +52,7 @@ function Events() {
     });
 
     const [teamMembers, setTeamMembers] = useState([]);
+    const [file, setFile] = useState(null);
 
     const signInWithGoogle = async () => {
         try {
@@ -98,6 +100,11 @@ function Events() {
         return () => unsubscribe();
     }, []);
 
+    const handleFileChange = (e) => {
+        e.preventDefault();
+        setFile(e.target.files[0]);
+    };
+
     const checkIfFormSubmitted = async (userId) => {
         const docRef = doc(db, 'users', userId);
         const docSnap = await getDoc(docRef);
@@ -120,6 +127,16 @@ function Events() {
 		const snapshot = await getDocs(userCollection);
         const munID = `MUN-${snapshot.docs.length + 1}`; // Generate a unique MUN ID
 
+        let imageURL = null;
+        if (file) {
+            const storage = getStorage();
+            const storageRef = ref(
+              storage,
+              `payment_screenshots/${userId}/${file.name}`
+            );
+            await uploadBytes(storageRef, file);
+            imageURL = await getDownloadURL(storageRef);
+        }
             // Submit the leader and team member details
             await setDoc(doc(db, 'users', userId), {
                 leaderDetails,
@@ -127,6 +144,7 @@ function Events() {
                 email: user.email,
                 uid: userId,
                 munID,
+                imageURL
             });
 
             setFormSubmitted(true);
@@ -231,7 +249,15 @@ function Events() {
                                 <Button onClick={addTeamMember} disabled={teamMembers.length >= 2} colorScheme="blue">
                                     Add Team Member
                                 </Button>
-
+                                <ul size="sm">
+                                    <li>One Person 3000</li>
+                                    <li>Two People 5000</li>
+                                    <li>Three People 8000</li>
+                                </ul>
+                                <FormControl isRequired>
+                                    <FormLabel>Upload Payment Screenshot</FormLabel>
+                                    <Input name='file' onChange={handleFileChange} accept='image/*' type='file'></Input>
+                                </FormControl>
                                 <Button type="submit" colorScheme="green" width="100%">Submit</Button>
                             </VStack>
                         </form>
