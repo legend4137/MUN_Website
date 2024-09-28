@@ -8,9 +8,9 @@ import Header from 'components/headers/light.js'
 import Footer from "components/footers/Home-Footer";
 
 import { auth, provider, db } from '../firebase/firebase';
-import { signInWithPopup, signOut } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import {
@@ -26,7 +26,8 @@ import {
     Heading,
     Image,
     Text,
-    Icon
+    Icon,
+    HStack
 } from '@chakra-ui/react'
 import { DeleteIcon, CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
 
@@ -47,6 +48,7 @@ function Events() {
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [munID, setMunID] = useState('');
     const [status, setStatus] = useState(null);
+    const [page, setPage] = useState(1);
     
     const [leaderDetails, setLeaderDetails] = useState({
         name: '',
@@ -128,9 +130,11 @@ function Events() {
 
     try {
 		const userId = user.uid;
-		const userCollection = collection(db, "users");
-		const snapshot = await getDocs(userCollection);
-        const munID = `MUN-${snapshot.docs.length + 1}`; // Generate a unique MUN ID
+        const idDoc = doc(db, "id", "id");
+        const idSnap = await getDoc(idDoc);
+        const atomicID = idSnap.data().id;
+        const todaysDate = new Date();
+        const munID = `MUN-${todaysDate.getMonth()+1}${todaysDate.getDate()}${atomicID + 1}`; // Generate a unique MUN ID
 
         let imageURL = null;
         if (file) {
@@ -151,6 +155,10 @@ function Events() {
                 munID,
                 status: false,
                 imageURL
+            });
+        
+            await setDoc(idDoc, {
+                id: atomicID + 1
             });
 
             setFormSubmitted(true);
@@ -192,7 +200,7 @@ function Events() {
                 registrableEvent={card.registrableEvent ? card.registrableEvent : false}
                 linkss={card.linkss ? card.linkss : "" }
                 linkss1={card.linkss1 ? card.linkss1 : "" }
-                timing ={card.timing == "Online Event" ? true : false}
+                timing ={card.timing === "Online Event" ? true : false}
                 minTeamSize={card.minTeamSize ? card.minTeamSize : 1}
                 maxTeamSize={card.maxTeamSize ? card.maxTeamSize : 1}
                 prize={card.prize ? card.prize : ""}
@@ -221,7 +229,9 @@ function Events() {
                         </Box>
                     ) : (
                         <form onSubmit={handleSubmit}>
-                            <VStack spacing={4}>
+                        <VStack spacing={4}>
+                            {page === 1 && (
+                            <>
                                 <Heading as="h2" size="lg" color="blue.500">Team Leader Details</Heading>
                                 <FormControl isRequired>
                                     <FormLabel>Team Leader Name</FormLabel>
@@ -244,49 +254,70 @@ function Events() {
 
                                 <Heading as="h3" size="md" color="blue.500">Team Members (Max 2)</Heading>
                                 {teamMembers.map((member, index) => (
-                                    <VStack key={index} spacing={4} border="1px solid" borderColor="blue.200" borderRadius="8px" p={4} mb={4} width="100%" bg="blue.50">
-                                        <FormControl isRequired>
-                                            <FormLabel>Member Name</FormLabel>
-                                            <Input name="name" value={member.name} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
-                                        </FormControl>
-                                        <FormControl isRequired>
-                                            <FormLabel>Member Address</FormLabel>
-                                            <Input name="address" value={member.address} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
-                                        </FormControl>
-                                        <FormControl isRequired>
-                                            <FormLabel>Member Phone</FormLabel>
-                                            <Input name="phone" value={member.phone} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
-                                        </FormControl>
-                                        <FormControl isRequired>
-                                            <FormLabel>Member College</FormLabel>
-                                            <Input name="college" value={member.college} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
-                                        </FormControl>
-                                        <IconButton icon={<DeleteIcon />} aria-label="Remove Team Member" onClick={() => removeTeamMember(index)} />
-                                    </VStack>
+                                <VStack key={index} spacing={4} border="1px solid" borderColor="blue.200" borderRadius="8px" p={4} mb={4} width="100%" bg="blue.50">
+                                    <FormControl isRequired>
+                                        <FormLabel>Member Name</FormLabel>
+                                        <Input name="name" value={member.name} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                    </FormControl>
+                                    <FormControl isRequired>
+                                        <FormLabel>Member Address</FormLabel>
+                                        <Input name="address" value={member.address} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                    </FormControl>
+                                    <FormControl isRequired>
+                                        <FormLabel>Member Phone</FormLabel>
+                                        <Input name="phone" value={member.phone} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                    </FormControl>
+                                    <FormControl isRequired>
+                                        <FormLabel>Member College</FormLabel>
+                                        <Input name="college" value={member.college} onChange={(e) => handleTeamMemberChange(index, e)} bg="orange.50" borderColor="blue.300" _hover={{ borderColor: 'blue.500' }} />
+                                    </FormControl>
+                                    <IconButton icon={<DeleteIcon />} aria-label="Remove Team Member" onClick={() => removeTeamMember(index)} />
+                                </VStack>
                                 ))}
 
                                 <Button onClick={addTeamMember} disabled={teamMembers.length >= 2} colorScheme="blue">
                                     Add Team Member
                                 </Button>
 
+                                <HStack>
+                                <Button onClick={() => setPage(2)} colorScheme="green">
+                                    Next
+                                </Button>
+                                </HStack>
+                            </>
+                            )}
+
+                            {page === 2 && (
+                            <>
+                                <Heading as="h3" size="md" color="blue.500">Scan QR Code to proceed with Payment</Heading>
                                 <Box textAlign="center">
-                                    <Heading as="h3" size="md" color="blue.500">Scan QR Code to proceed with Payment</Heading>
-                                    <Image src="/QR.png" alt="QR Code" boxSize="150px" m="auto" />
+                                <Image src="/QR.png" alt="QR Code" boxSize="150px" m="auto" />
                                 </Box>
 
                                 <ul size="sm">
-                                    <li>One Person 3000</li>
-                                    <li>Two People 5000</li>
-                                    <li>Three People 8000</li>
+                                <li>One Person 3000</li>
+                                <li>Two People 5000</li>
+                                <li>Three People 8000</li>
                                 </ul>
+
                                 <FormControl isRequired>
-                                    <FormLabel>Upload Payment Screenshot</FormLabel>
-                                    <Input name='file' onChange={handleFileChange} accept='image/*' type='file'></Input>
+                                <FormLabel>Upload Payment Screenshot</FormLabel>
+                                <Input name='file' onChange={handleFileChange} accept='image/*' type='file'></Input>
                                 </FormControl>
+
                                 <Divider borderColor="gray.300" />
 
-                                <Button type="submit" colorScheme="green" width="100%">Submit</Button>
-                            </VStack>
+                                <HStack width="100%">
+                                <Button onClick={() => setPage(1)} colorScheme="blue" width="50%">
+                                    Back
+                                </Button>
+                                <Button type="submit" colorScheme="green" width="50%">
+                                    Submit
+                                </Button>
+                                </HStack>
+                            </>
+                            )}
+                        </VStack>
                         </form>
                     )
                 ) : (
