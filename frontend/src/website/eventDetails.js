@@ -12,16 +12,8 @@ import Test from "components/test"
 import { auth, provider, db } from '../firebase/firebase';
 import { signInWithPopup, signOut } from "firebase/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 
-import {
-    Accordion,
-    AccordionItem,
-    AccordionButton,
-    AccordionPanel,
-    AccordionIcon,
-    Box
-  } from '@chakra-ui/react'
 // import { createBrowserHistory } from 'history'
 
 // export const history = createBrowserHistory({forceRefresh: true})
@@ -107,8 +99,10 @@ function Events() {
     }
 
     try {
-        const userId = user.uid;
-        const munID = `MUN-${Math.floor(1000 + Math.random() * 9000)}`; // Generate a unique MUN ID
+		const userId = user.uid;
+		const userCollection = collection(db, "users");
+		const snapshot = await getDocs(userCollection);
+        const munID = `MUN-${snapshot.docs.length + 1}`; // Generate a unique MUN ID
 
         await setDoc(doc(db, 'users', userId), {
         ...formData,
@@ -136,7 +130,6 @@ function Events() {
     return () => unsubscribe();
     }, []);
 
-    const HighlightedText = tw.span`bg-black text-gray-100 px-4 transform -skew-x-12 inline-block`;
     return (
         <AnimationRevealPage>
             <Header />
