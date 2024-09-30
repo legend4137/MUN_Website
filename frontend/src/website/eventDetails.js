@@ -59,6 +59,8 @@ function Events() {
 
     const [teamMembers, setTeamMembers] = useState([]);
     const [file, setFile] = useState(null);
+    const [qrCodeURL, setQrCodeURL] = useState(null);
+    const [price, setPrice] = useState(null);
 
     const signInWithGoogle = async () => {
         try {
@@ -106,9 +108,52 @@ function Events() {
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        if (user) {
+            if (teamMembers.length >= 0) {
+            const storage = getStorage();
+            let qrFileName = 'QR1.png'; // Default for team size 1
+        
+            if (teamMembers.length === 1) {
+                qrFileName = 'QR2.png'; // For team size 2
+            } else if (teamMembers.length === 2) {
+                qrFileName = 'QR3.png'; // For team size 3
+            }
+        
+            const qrRef = ref(storage, `qr_codes/${qrFileName}`);
+
+            checkPrice();
+
+            getDownloadURL(qrRef)
+                .then((url) => {
+                setQrCodeURL(url); // Set the QR code URL based on team size
+                })
+                .catch((error) => {
+                console.error('Error fetching QR code:', error);
+                });
+            }
+        }
+      }, [teamMembers]); // This will run whenever the team size changes
+
     const handleFileChange = (e) => {
         e.preventDefault();
         setFile(e.target.files[0]);
+    };
+
+    const checkPrice = async () => {
+        const docRef = doc(db, 'id', 'prices');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            if (teamMembers.length == 0) {
+                setPrice(docSnap.data().one);
+            }
+            else if (teamMembers.length == 1) {
+                setPrice(docSnap.data().two);
+            }
+            else if (teamMembers.length == 2) {
+                setPrice(docSnap.data().three);
+            }
+        }
     };
 
     const checkIfFormSubmitted = async (userId) => {
@@ -229,7 +274,6 @@ function Events() {
 
                             <Text>
                                 For any Query Contact +91 9509615569
-
                             </Text>
                         </Box>
                     ) : (
@@ -296,14 +340,13 @@ function Events() {
                             <>
                                 <Heading as="h3" size="md" color="blue.500">Scan QR Code to proceed with Payment</Heading>
                                 <Box textAlign="center">
-                                <Image src="/QR.png" alt="QR Code" boxSize="150px" m="auto" />
+                                    {qrCodeURL ? (
+                                        <Image src={qrCodeURL} alt="QR Code" boxSize="150px" m="auto" />
+                                    ) : (
+                                        <Text>Loading QR Code...</Text>
+                                    )}
+                                    <Text> Price: {price} </Text>
                                 </Box>
-
-                                <ul size="sm">
-                                <li>One Person 3000</li>
-                                <li>Two People 5000</li>
-                                <li>Three People 8000</li>
-                                </ul>
 
                                 <FormControl isRequired>
                                 <FormLabel>Upload Payment Screenshot</FormLabel>
