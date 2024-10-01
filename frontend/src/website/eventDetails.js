@@ -47,7 +47,7 @@ function Events() {
     const [user, setUser] = useState(null);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [munID, setMunID] = useState('');
-    const [status, setStatus] = useState(null);
+    const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
     
     const [leaderDetails, setLeaderDetails] = useState({
@@ -158,13 +158,29 @@ function Events() {
 
     const checkIfFormSubmitted = async (userId) => {
         const docRef = doc(db, 'users', userId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            setFormSubmitted(true);
-            setMunID(docSnap.data().munID);
-            setStatus(docSnap.data().status);
+        try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setFormSubmitted(true);
+                setMunID(data.munID);
+                setStatus(data.status);
+            } else {
+                console.log("No such document!");
+            }
+        } catch (e) {
+            console.error("Error fetching document:", e);
         }
     };
+    
+    // To ensure you capture state updates:
+    useEffect(() => {
+        if (munID || status) {
+            console.log("Updated status:", status);
+            console.log("Updated MUN ID:", munID);
+        }
+    }, [status, munID]); // This effect will run when status or munID change
+    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -260,7 +276,7 @@ function Events() {
                             <Heading as="h3" size="lg" color="blue.500">Application Status</Heading>
                             <Text>Your MUN ID: {munID}</Text>
 
-                            {status === true ? (
+                            {status === 'true' ? (
                                 <VStack mt={4}>
                                     <Icon as={CheckCircleIcon} w={10} h={10} color="green.500" />
                                     <Text fontSize="lg" color="green.600">Your application is approved!</Text>
