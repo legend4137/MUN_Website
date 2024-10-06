@@ -22,7 +22,7 @@ import EventDetails from "website/eventDetails";
 import Register from "website/register"
 import EventRegistration from "website/eventRegistration";
 import Dashboard from "website/dashboard";
-import Guest from "website/guest"
+// import Guest from "website/guest"
 import Admin from "website/admin"
 
 import ScrollToTop from "website/scrollToTop";

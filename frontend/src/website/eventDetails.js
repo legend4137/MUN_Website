@@ -30,6 +30,7 @@ import {
     HStack
 } from '@chakra-ui/react'
 import { DeleteIcon, CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
+import { FcGoogle } from "react-icons/fc";
 
 function goBackToEvents(history) {
     history.push("/events")
@@ -385,9 +386,24 @@ function Events() {
                         </form>
                     )
                 ) : (
-                    <div>
-                        <button onClick={signInWithGoogle}>Sign In with Google</button>
-                    </div>
+                    <Box display="flex" justifyContent="center" alignItems="center">
+                    <Button 
+                        onClick={signInWithGoogle} 
+                        leftIcon={<FcGoogle />} 
+                        colorScheme="teal" 
+                        variant="solid" 
+                        size="lg"
+                        boxShadow="lg"
+                        _hover={{ backgroundColor: "teal.400" }}
+                    >
+                        <Text fontSize="lg" fontWeight="bold">
+                            Register to participate
+                        </Text>
+                    </Button>
+                </Box>
+                    // <div>
+                    //     <button onClick={signInWithGoogle}>Register to participate</button>
+                    // </div>
                 )}
             </Box>
             <Footer />

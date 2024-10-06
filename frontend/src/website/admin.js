@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase/firebase'; // Firebase authentication and Firestore setup
+import { auth, db } from '../firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { useHistory } from 'react-router-dom';
@@ -12,10 +12,8 @@ import {
     Tr,
     Th,
     Td,
-    Image,
     Spinner,
-    Text,
-    Button
+    Text
 } from '@chakra-ui/react';
 
 const Admin = () => {
@@ -26,7 +24,7 @@ const Admin = () => {
     const history = useHistory();
 
     // Allowed Admin Emails
-    const allowedEmails = ['smvarshit@gmail.com'];
+    const allowedEmails = ['smvarshit@gmail.com', 'sriganeshthota12345@gmail.com', 'aaftaab@iitj.ac.in', 'b22mt019@iitj.ac.in'];
 
     // Listen for authentication state changes
     useEffect(() => {
