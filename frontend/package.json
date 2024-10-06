@@ -16,6 +16,7 @@
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^13.1.5",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.5",
     "feather-icons": "^4.28.0",
     "firebase": "^10.13.2",
     "framer-motion": "^4.1.5",
